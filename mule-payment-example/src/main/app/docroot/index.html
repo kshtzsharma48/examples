@@ -1,0 +1,352 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+
+<head>
+<title>Mule Payment Example</title>
+<link rel="stylesheet" type="text/css" href="resources/css/ext-all.css"/>
+<link rel="stylesheet" type="text/css" href="base.css"/>
+<script type="text/javascript" src="adapter/ext/ext-base.js"></script>
+<script type="text/javascript" src="ext-all.js"></script>
+<script type="text/javascript" src="mule-resource/js/mule.js"></script>
+
+<script type="text/javascript">
+
+var panel;
+var simpleForm;
+var wait;
+
+Ext.onReady(function()
+{
+    new Ext.Button({text: 'Purchase Now!',
+        handler: purchaseMule,
+        applyTo: 'standardMulePurchaseButton',
+        width: 100,
+        height: 35,
+        id: 'standardMule'});
+
+    new Ext.Button({text: 'Purchase Now!',
+        handler: purchaseMule,
+        applyTo: 'deluxeMulePurchaseButton',
+        width: 100,
+        height: 35,
+        id: 'deluxeMule'});
+
+    new Ext.Button({text: 'Purchase Now!',
+        handler: purchaseMule,
+        applyTo: 'premiumMulePurchaseButton',
+        width: 100,
+        height: 35,
+        id: 'premiumMule'});
+
+});
+
+
+function purchaseMule(button, event)
+{
+    var purchaseAmount = 0;
+
+    if (button.id == 'standardMule')
+    {
+        purchaseAmount = 500;
+    } else if (button.id == 'deluxeMule')
+    {
+        purchaseAmount = 2500;
+    } else if (button.id == 'premiumMule')
+    {
+        purchaseAmount = 10000;
+    }
+
+    simpleForm = new Ext.FormPanel({
+        id: 'simpleForm',
+        bodyStyle:'padding:5px 5px 0',
+        width: 350,
+        defaults: {width: 230},
+        defaultType: 'textfield',
+
+        items: [
+            {
+                fieldLabel: 'First Name',
+                name: 'first',
+                allowBlank:false
+            },
+            {
+                fieldLabel: 'Last Name',
+                name: 'last',
+                allowBlank: false
+            },
+            {
+                fieldLabel: 'Company',
+                name: 'company',
+                allowBlank: false
+            },
+            {
+                fieldLabel: 'Email',
+                name: 'email',
+                vtype:'email'
+            },
+            {
+                fieldLabel: 'Address',
+                name: 'address'
+            },
+            {
+                fieldLabel: 'City',
+                name: 'city'
+            },
+            {
+                fieldLabel: 'State/Provience',
+                name: 'state'
+            },
+            {
+                fieldLabel: 'Country',
+                name: 'country'
+            },
+            {
+                fieldLabel: 'Phone',
+                name: 'phone'
+            },
+            {
+                fieldLabel: 'Card Number',
+                name: 'cardnumber',
+                allowBlank: false
+            },
+            {
+                fieldLabel: 'Card Expire Date',
+                name: 'cardexpire',
+                allowBlank: false
+            },
+            {
+                xtype: 'hidden',
+                name: 'amount',
+                value: purchaseAmount
+            }
+
+
+        ],
+
+        buttons: [
+            {
+                text: 'Make Purchase',
+                handler: submitPurchase
+            },
+            {
+                text: 'Cancel',
+                handler: closeWindow
+            },
+            {
+                text: 'Fill in Forms',
+                handler: fillinForms
+            }
+        ]
+    });
+
+
+    new Ext.Window(
+    {
+        id: 'paymentWindow',
+        closable: false,
+        modal: true,
+        layout: "fit",
+        title: "Purchase Information",
+        height: 360,
+        width: 360,
+        items: [simpleForm],
+        closeAction: "hide"
+    }).show()
+}
+
+function fillinForms(button, event)
+{
+    simpleForm.getForm().findField('first').setValue('Mule');
+    simpleForm.getForm().findField('last').setValue('Man');
+    simpleForm.getForm().findField('company').setValue('MuleCo');
+    simpleForm.getForm().findField('email').setValue('muleman@muleco.com');
+    simpleForm.getForm().findField('address').setValue('30 Maiden Ln, Suite 500');
+    simpleForm.getForm().findField('state').setValue('CA');
+    simpleForm.getForm().findField('city').setValue('San Francisco');
+    simpleForm.getForm().findField('country').setValue('USA');
+    simpleForm.getForm().findField('phone').setValue('415.Got.Mule');
+    simpleForm.getForm().findField('cardnumber').setValue('370000000000002');
+    simpleForm.getForm().findField('cardexpire').setValue('12/12');
+}
+
+
+function submitPurchase(button, event)
+{
+    if (simpleForm.form.isValid())
+    {
+
+        mule.rpc("/payment", simpleForm.form.getFieldValues(), paymentProcessed);
+        Ext.MessageBox.show({
+            msg: 'Processing your payment, please wait...',
+            id: 'progressBox',
+            progressText: 'Sending...',
+            width:300,
+            wait:true,
+            animEl: 'mb7'
+        });
+    }
+}
+
+function closeWindow(button, event)
+{
+    Ext.getCmp('paymentWindow').close();
+}
+
+function paymentProcessed(message)
+{
+    Ext.MessageBox.hide();
+    if (message.data.indexOf("Error") != -1)
+    {
+        Ext.MessageBox.show({
+            msg: message.data,
+            width:400,
+            buttons: Ext.MessageBox.OK
+        })
+    }
+    else
+    {
+        Ext.MessageBox.show({
+            msg: message.data,
+            width:400,
+            fn: closeWindow,
+            buttons: Ext.MessageBox.OK
+        });
+    }
+}
+</script>
+
+
+</head>
+
+
+<body style="font-family: arial, sans-serif" id="body">
+
+<div style="font-size: large; text-align: left">
+    <img src="images/mulesoft-logo-final.gif" style="padding-left: 20px; padding-top: 20px; padding-right: 10px;"
+         alt=""/>
+    Welcome to the Mule Store!
+</div>
+
+<div style="margin-left: 1em">
+
+    <div style="height: 40px"></div>
+    Please select your Mule below:
+
+    <table width="800" style="padding-top: 0">
+        <tr style="height: 500px">
+            <td style="width: 33%;">
+                <div class="box">
+
+                    <!--- box border -->
+                    <div class="lb">
+                        <div class="rb">
+                            <div class="bb">
+                                <div class="blc">
+                                    <div class="brc">
+                                        <div class="tb">
+                                            <div class="tlc">
+                                                <div class="trc">
+                                                    <div class="content">
+                                                        <h1>Standard Mule</h1>
+                                                        <br>
+                                                        <img src="images/standard_mule.png" alt=""/>
+
+                                                        <p>
+                                                            Price $500
+                                                        </p>
+                                                        <br>
+
+                                                        <div style="width:100px; margin:0 auto;">
+                                                            <div style="font-weight:bold;"
+                                                                 id="standardMulePurchaseButton"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div class="box">
+                    <div class="lb">
+                        <div class="rb">
+                            <div class="bb">
+                                <div class="blc">
+                                    <div class="brc">
+                                        <div class="tb">
+                                            <div class="tlc">
+                                                <div class="trc">
+                                                    <div class="content">
+                                                        <h1>Deluxe Mule</h1>
+                                                        <br>
+                                                        <img src="images/deluxe_mule.png" alt=""/>
+
+                                                        <p>
+                                                            Price $2,500
+                                                        </p>
+                                                        <br>
+
+                                                        <div style="width:100px; margin:0 auto;">
+                                                            <div style="font-weight:bold;"
+                                                                 id="deluxeMulePurchaseButton"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div class="box">
+                    <div class="lb">
+                        <div class="rb">
+                            <div class="bb">
+                                <div class="blc">
+                                    <div class="brc">
+                                        <div class="tb">
+                                            <div class="tlc">
+                                                <div class="trc" style="height:482px">
+                                                    <div class="content" style="padding-bottom:0px; height:380px">
+                                                        <h1>Premium Mule</h1>
+                                                        <br>
+                                                        <img src="images/premium_mule.png" alt=""/>
+
+                                                        <div style="padding-top:58px"></div>
+
+                                                        <p>Price $10,000</p>
+
+                                                        <br>
+
+                                                        <div style="width:100px; margin:0 auto;">
+                                                            <div style="font-weight:bold;"
+                                                                 id="premiumMulePurchaseButton"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+
+    </table>
+</div>
+
+<div id="fieldPanel"></div>
+</body>
+</html>

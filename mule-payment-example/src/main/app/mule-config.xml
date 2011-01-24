@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:ajax="http://www.mulesoft.org/schema/mule/ajax"
+      xmlns:authorize="http://www.mulesoft.org/schema/mule/authorizenet"
+      xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+      xmlns:context="http://www.springframework.org/schema/context"
+      xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp"
+      xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/ajax http://www.mulesoft.org/schema/mule/ajax/3.1/mule-ajax.xsd
+        http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/3.1/mule.xsd
+        http://www.mulesoft.org/schema/mule/authorizenet http://www.mulesoft.org/schema/mule/authorizenet/3.1/mule-authorizenet.xsd
+        http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/3.1/mule-salesforce.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+        http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smtp/3.1/mule-smtp.xsd
+        ">
+
+    <context:property-placeholder location="mule.properties"/>
+
+    <ajax:connector name="ajaxServer" serverUrl="https://0.0.0.0:8082/services/checkout"
+                    resourceBase="${app.home}/docroot"/>
+
+    <authorize:config name="auth" merchantLogin="${auth.merchantLogin}"
+                      merchantTransactionKey="${auth.merchantTransactionkey}"
+                      testMode="true"/>
+
+    <salesforce:config name="sfdc" username="${sfdc.username}" password="${sfdc.password}"
+                       securityToken="${sfdc.securityToken}"/>
+
+    <smtp:gmail-connector name="email"/>
+
+    <flow name="paymentFlow">
+        <ajax:inbound-endpoint channel="/payment"/>
+
+        <enricher>
+            <authorize:authorization-and-capture amount="#[map-payload:amount]" cardNumber="#[map-payload:cardnumber]"
+                                                 expDate="#[map-payload:cardexpire]"/>
+
+            <enrich target="#[variable:PaymentSuccess]" source="#[bean:responseCode]"/>
+            <enrich target="#[variable:ErrorCode]" source="#[bean:responseReasonText]"/>
+        </enricher>
+
+        <choice>
+            <when evaluator="variable" expression="PaymentSuccess=1">
+                <async>
+                    <enricher target="#[variable:AccountId]" source="#[groovy:payload.get(0).getId()]">
+                        <salesforce:create type="Account">
+                            <salesforce:sObject>
+                                <salesforce:field key="Name" value="#[map-payload:company]"/>
+                                <salesforce:field key="BillingCity" value="#[map-payload:city]"/>
+                                <salesforce:field key="BillingCountry" value="#[map-payload:country]"/>
+                                <salesforce:field key="BillingStreet" value="#[map-payload:address]"/>
+                                <salesforce:field key="BillingState" value="#[map-payload:state]"/>
+                                <salesforce:field key="Phone" value="#[map-payload:phone]"/>
+                            </salesforce:sObject>
+                        </salesforce:create>
+                    </enricher>
+
+                    <salesforce:create type="Contact">
+                        <salesforce:sObject>
+                            <salesforce:field key="AccountId" value="#[variable:AccountId]"/>
+                            <salesforce:field key="FirstName" value="#[map-payload:first]"/>
+                            <salesforce:field key="LastName" value="#[map-payload:last]"/>
+                            <salesforce:field key="Email" value="#[map-payload:email]"/>
+                            <salesforce:field key="Phone" value="#[map-payload:phone]"/>
+                        </salesforce:sObject>
+                    </salesforce:create>
+                </async>
+
+                <async>
+                    <expression-transformer>
+                        <return-argument evaluator="string" expression="We have a Mule Order!"/>
+                    </expression-transformer>
+
+                    <smtp:outbound-endpoint host="smtp.gmail.com" port="587"
+                                            user="mulesoft.test%40gmail.com" password="${gmail.password}"
+                                            from="mulesoft.test@gmail.com" to="mulesoft.test@gmail.com"
+                                            subject="We have a Mule Order"/>
+
+                </async>
+
+                <expression-transformer>
+                    <return-argument evaluator="string" expression="Success! We hope you enjoy your Mule!"/>
+                </expression-transformer>
+            </when>
+            <otherwise>
+                <expression-transformer>
+                    <return-argument evaluator="string" expression="Error: #[variable:ErrorCode]"/>
+                </expression-transformer>
+            </otherwise>
+
+        </choice>
+        <default-exception-strategy>
+            <processor-chain>
+                <object-to-string-transformer/>
+
+                <smtp:outbound-endpoint host="smtp.gmail.com" port="587"
+                                        user="mulesoft.test%40gmail.com" password="${gmail.password}"
+                                        from="mulesoft.test@gmail.com" to="mulesoft.test@gmail.com"
+                                        subject="ERROR: Exception Caught"
+                                        connector-ref="email"/>
+            </processor-chain>
+        </default-exception-strategy>
+    </flow>
+</mule>
