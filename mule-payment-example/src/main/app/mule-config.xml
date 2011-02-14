@@ -6,7 +6,7 @@
       xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
       xmlns:context="http://www.springframework.org/schema/context"
       xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp"
-      xsi:schemaLocation="
+       xsi:schemaLocation="
         http://www.mulesoft.org/schema/mule/ajax http://www.mulesoft.org/schema/mule/ajax/3.1/mule-ajax.xsd
         http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/3.1/mule.xsd
         http://www.mulesoft.org/schema/mule/authorizenet http://www.mulesoft.org/schema/mule/authorizenet/3.1/mule-authorizenet.xsd
@@ -17,8 +17,13 @@
 
     <context:property-placeholder location="mule.properties"/>
 
-    <ajax:connector name="ajaxServer" serverUrl="https://0.0.0.0:8082/services/checkout"
-                    resourceBase="${app.home}/docroot"/>
+
+    <ajax:connector name="paymentServer" serverUrl="https://0.0.0.0:8082/services/checkout"
+                    resourceBase="${app.home}/docroot">
+        <!-- You can create this keystore using the keytool that comes with Java using a command like:
+            keytool -genkey -alias mule -keyalg RSA -keystore <path to keystore> -->
+        <ajax:key-store path="<path to keystore>" storePassword="${ssl.password}" keyPassword="${ssl.password}"/>
+    </ajax:connector>
 
     <authorize:config name="auth" merchantLogin="${auth.merchantLogin}"
                       merchantTransactionKey="${auth.merchantTransactionkey}"
@@ -32,9 +37,10 @@
     <flow name="paymentFlow">
         <ajax:inbound-endpoint channel="/payment"/>
 
+
         <enricher>
             <authorize:authorization-and-capture amount="#[map-payload:amount]" cardNumber="#[map-payload:cardnumber]"
-                                                 expDate="#[map-payload:cardexpire]"/>
+                                                 expDate="#[map-payload:cardexpire]" />
 
             <enrich target="#[variable:PaymentSuccess]" source="#[bean:responseCode]"/>
             <enrich target="#[variable:ErrorCode]" source="#[bean:responseReasonText]"/>
@@ -69,7 +75,8 @@
 
                 <async>
                     <expression-transformer>
-                        <return-argument evaluator="string" expression="We have a Mule Order!"/>
+                        <return-argument evaluator="string"
+                                         expression="We have a Mule Order from #[map-payload:first] #[map-payload:last]!"/>
                     </expression-transformer>
 
                     <smtp:outbound-endpoint host="smtp.gmail.com" port="587"
@@ -78,6 +85,7 @@
                                             subject="We have a Mule Order"/>
 
                 </async>
+
 
                 <expression-transformer>
                     <return-argument evaluator="string" expression="Success! We hope you enjoy your Mule!"/>
