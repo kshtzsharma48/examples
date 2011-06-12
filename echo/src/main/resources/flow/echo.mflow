@@ -1,27 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<mule-configuration xmlns="http://www.mulesoft.com/tooling/messageflow" name="echo">
-    <flow name="Flow1" entity-id="8a0c1426-a3d3-48ac-8c73-4564b7f80d8e">
-        <lane entity-id="9e1eae29-0397-4e41-9f7e-b37854326a66">
-            <endpoint message-exchange-pattern="RequestResponse" direction="Inbound" type="org.mule.tooling.ui.modules.core.endpoint.httpEndpoint" name="HTTP" entity-id="ec959dbc-8208-459a-a603-401b72e57f92">
+<mule-configuration xmlns="http://www.mulesoft.com/tooling/messageflow">
+    <flow name="Flow1">
+        <lane entity-id="10de69e6-dd26-4917-831f-cab8a59377fc">
+            <endpoint message-exchange-pattern="RequestResponse" direction="Inbound" type="org.mule.tooling.ui.modules.core.endpoint.httpEndpoint" name="HTTP" entity-id="a4e7e722-c629-452d-952f-b8bf2ba1983c">
                 <properties>
                     <property value="${http.port}" name="port"/>
-                    <property value="" name="endpoint.address"/>
                     <property value="localhost" name="host"/>
-                    <property value="" name="content.type"/>
-                    <property value="" name="endpoint.exchange.pattern"/>
-                    <property value="" name="path"/>
-                    <property value="" name="endpoint.connector.ref"/>
-                    <property value="" name="method"/>
-                    <property value="" name="password"/>
-                    <property value="" name="user"/>
                     <property value="false" name="keep.alive"/>
                 </properties>
                 <description>Process HTTP reqests or responses.</description>
             </endpoint>
-            <pattern type="org.mule.tooling.ui.modules.core.pattern.echo" name="Echo" entity-id="8674e2b7-3d51-4619-89cf-fd41d30c1e31">
+            <pattern type="org.mule.tooling.ui.modules.core.pattern.echo" name="Echo" entity-id="9a7d97f7-187b-4a37-a0d0-9a3d6295af12">
                 <description>Echos message payload to console.</description>
             </pattern>
         </lane>
     </flow>
-    <description></description>
 </mule-configuration>
