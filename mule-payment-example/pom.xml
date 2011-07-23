@@ -9,10 +9,12 @@
     <version>1.0</version>
 
     <properties>
-        <muleVersion>3.1.0</muleVersion>
+        <muleVersion>3.1.2</muleVersion>
     </properties>
 
-    <description>Process A Payment</description>
+    <description>Simple Payments example where the payment is made through Authorize.net, then an account and a contact
+        is created in Salesforce and finally and email is sent to the buyer
+    </description>
 
     <build>
         <defaultGoal>install</defaultGoal>
@@ -85,9 +87,9 @@
             <version>1.0</version>
         </dependency>
         <dependency>
-            <groupId>org.mule.transports</groupId>
-            <artifactId>mule-transport-sfdc</artifactId>
-            <version>3.0</version>
+            <groupId>org.mule.modules</groupId>
+            <artifactId>mule-module-sfdc</artifactId>
+            <version>3.0.2</version>
         </dependency>
     </dependencies>
 
@@ -95,7 +97,7 @@
         <repository>
             <id>muleforge-repo</id>
             <name>MuleForge Repository</name>
-            <url>http://repository.muleforge.org</url>
+            <url>http://repository.mulesoft.org/releases</url>
             <layout>default</layout>
         </repository>
 

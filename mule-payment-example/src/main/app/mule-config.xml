@@ -4,25 +4,21 @@
       xmlns:ajax="http://www.mulesoft.org/schema/mule/ajax"
       xmlns:authorize="http://www.mulesoft.org/schema/mule/authorizenet"
       xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
-      xmlns:context="http://www.springframework.org/schema/context"
       xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp"
        xsi:schemaLocation="
         http://www.mulesoft.org/schema/mule/ajax http://www.mulesoft.org/schema/mule/ajax/3.1/mule-ajax.xsd
         http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/3.1/mule.xsd
         http://www.mulesoft.org/schema/mule/authorizenet http://www.mulesoft.org/schema/mule/authorizenet/3.1/mule-authorizenet.xsd
         http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/3.1/mule-salesforce.xsd
-        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
         http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smtp/3.1/mule-smtp.xsd
         ">
 
-    <context:property-placeholder location="mule.properties"/>
 
-
-    <ajax:connector name="paymentServer" serverUrl="https://0.0.0.0:8082/services/checkout"
+    <ajax:connector name="paymentServer" serverUrl="http://0.0.0.0:${http.port}/services/checkout"
                     resourceBase="${app.home}/docroot">
         <!-- You can create this keystore using the keytool that comes with Java using a command like:
-            keytool -genkey -alias mule -keyalg RSA -keystore <path to keystore> -->
-        <ajax:key-store path="<path to keystore>" storePassword="${ssl.password}" keyPassword="${ssl.password}"/>
+            keytool -genkey -alias mule -keyalg RSA -keystore <path to keystore>
+        <ajax:key-store path="<path to keystore>" storePassword="${ssl.password}" keyPassword="${ssl.password}"/-->
     </ajax:connector>
 
     <authorize:config name="auth" merchantLogin="${auth.merchantLogin}"
@@ -32,11 +28,10 @@
     <salesforce:config name="sfdc" username="${sfdc.username}" password="${sfdc.password}"
                        securityToken="${sfdc.securityToken}"/>
 
-    <smtp:gmail-connector name="email"/>
+    <smtp:gmail-connector name="email" />
 
     <flow name="paymentFlow">
         <ajax:inbound-endpoint channel="/payment"/>
-
 
         <enricher>
             <authorize:authorization-and-capture amount="#[map-payload:amount]" cardNumber="#[map-payload:cardnumber]"
@@ -46,6 +41,7 @@
             <enrich target="#[variable:ErrorCode]" source="#[bean:responseReasonText]"/>
         </enricher>
 
+        <expression-filter evaluator="custom" expression="PaymentSuccess=1" customEvaluator="variable"
         <choice>
             <when evaluator="variable" expression="PaymentSuccess=1">
                 <async>
@@ -80,9 +76,9 @@
                     </expression-transformer>
 
                     <smtp:outbound-endpoint host="smtp.gmail.com" port="587"
-                                            user="mulesoft.test%40gmail.com" password="${gmail.password}"
-                                            from="mulesoft.test@gmail.com" to="mulesoft.test@gmail.com"
-                                            subject="We have a Mule Order"/>
+                                            user="ibeanstestinbox%40gmail.com" password="${gmail.password}"
+                                            from="ibeanstestinbox@gmail.com" to="#[map-payload:email]"
+                                            subject="Thank you for your Mule Order"/>
 
                 </async>
 
@@ -98,13 +94,14 @@
             </otherwise>
 
         </choice>
+        
         <default-exception-strategy>
             <processor-chain>
                 <object-to-string-transformer/>
 
                 <smtp:outbound-endpoint host="smtp.gmail.com" port="587"
-                                        user="mulesoft.test%40gmail.com" password="${gmail.password}"
-                                        from="mulesoft.test@gmail.com" to="mulesoft.test@gmail.com"
+                                        user="ibeanstestinbox%40gmail.com" password="${gmail.password}"
+                                        from="ibeanstestinbox@gmail.com" to="ibeanstestinbox@gmail.com"
                                         subject="ERROR: Exception Caught"
                                         connector-ref="email"/>
             </processor-chain>
