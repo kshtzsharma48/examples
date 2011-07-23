@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<mule-configuration xmlns="http://www.mulesoft.com/tooling/messageflow">
+    <flow name="Flow1">
+        <lane entity-id="10de69e6-dd26-4917-831f-cab8a59377fc">
+            <endpoint message-exchange-pattern="RequestResponse" direction="Inbound" type="org.mule.tooling.ui.modules.core.endpoint.httpEndpoint" name="HTTP" entity-id="a4e7e722-c629-452d-952f-b8bf2ba1983c">
+                <properties>
+                    <property value="${http.port}" name="port"/>
+                    <property value="localhost" name="host"/>
+                    <property value="false" name="keep.alive"/>
+                </properties>
+                <description>Process HTTP reqests or responses.</description>
+            </endpoint>
+            <pattern type="org.mule.tooling.ui.modules.core.pattern.echo" name="Echo" entity-id="9a7d97f7-187b-4a37-a0d0-9a3d6295af12">
+                <description>Echos message payload to console.</description>
+            </pattern>
+        </lane>
+    </flow>
+</mule-configuration>
