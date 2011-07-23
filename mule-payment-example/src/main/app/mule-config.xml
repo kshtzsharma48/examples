@@ -41,7 +41,6 @@
             <enrich target="#[variable:ErrorCode]" source="#[bean:responseReasonText]"/>
         </enricher>
 
-        <expression-filter evaluator="custom" expression="PaymentSuccess=1" customEvaluator="variable"
         <choice>
             <when evaluator="variable" expression="PaymentSuccess=1">
                 <async>
